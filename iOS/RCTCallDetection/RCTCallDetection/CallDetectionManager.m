@@ -1,12 +1,3 @@
-//
-//  CallDetectionManager.m
-//
-//
-//  Created by Pritesh Nandgaonkar on 16/06/17.
-//  Updated by Doug Watkins for Inside Real Estate on 31/07/19
-//  Copyright © 2017 Facebook. All rights reserved.
-//
-
 #import "CallDetectionManager.h"
 @import CallKit;
 
@@ -30,35 +21,39 @@ typedef void (^CallBack)();
 RCT_EXPORT_MODULE()
 
 RCT_EXPORT_METHOD(addCallBlock:(RCTResponseSenderBlock) block) {
-    // Setup call tracking
     self.block = block;
-    self.callObserver = [[CXCallObserver alloc] init];
-    __typeof(self) weakSelf = self;
-    [self.callObserver setDelegate:weakSelf queue:nil];
+    if (!self.callObserver) {
+        self.callObserver = [[CXCallObserver alloc] init];
+        [self.callObserver setDelegate:self queue:nil];
+    }
 }
 
 RCT_EXPORT_METHOD(startListener) {
-    // Setup call tracking
-    self.callObserver = [[CXCallObserver alloc] init];
-    __typeof(self) weakSelf = self;
-    [self.callObserver setDelegate:weakSelf queue:nil];
+    if (!self.callObserver) {
+        self.callObserver = [[CXCallObserver alloc] init];
+        [self.callObserver setDelegate:self queue:nil];
+    }
 }
 
 RCT_EXPORT_METHOD(stopListener) {
-    // Setup call tracking
     self.callObserver = nil;
 }
 
 - (void)callObserver:(CXCallObserver *)callObserver callChanged:(CXCall *)call {
-    if (call.hasEnded == true) {
-      [self sendEventWithName:@"PhoneCallStateUpdate" body:@"Disconnected"];
-    } else if (call.hasConnected == true) {
-      [self sendEventWithName:@"PhoneCallStateUpdate" body:@"Connected"];
-    } else if (call.isOutgoing == true) {
-      [self sendEventWithName:@"PhoneCallStateUpdate" body:@"Dialing"];
-    } else {
-      [self sendEventWithName:@"PhoneCallStateUpdate" body:@"Incoming"];
+    if (!self.bridge) {
+        return;
     }
+    NSString *state;
+    if (call.hasEnded) {
+        state = @"Disconnected";
+    } else if (call.hasConnected) {
+        state = @"Connected";
+    } else if (call.isOutgoing) {
+        state = @"Dialing";
+    } else {
+        state = @"Incoming";
+    }
+    [self sendEventWithName:@"PhoneCallStateUpdate" body:state];
 }
 
 @end
