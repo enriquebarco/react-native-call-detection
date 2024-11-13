@@ -56,14 +56,24 @@ RCT_EXPORT_METHOD(stopListener) {
     }
     
     NSString *state;
-    if (call.isOutgoing) {
+    if (call.isOutgoing && !call.hasConnected && !call.hasEnded) {
         state = @"Dialing";
-    } else if (call.hasConnected) {
+    } else if (call.isOutgoing && call.hasConnected && !call.hasEnded) {
         state = @"Connected";
-    } else if (call.hasEnded) {
-        state = @"Disconnected";
-    } else {
+    } else if (!call.isOutgoing && !call.hasConnected && !call.hasEnded) {
         state = @"Incoming";
+    } else if (!call.isOutgoing && call.hasConnected && !call.hasEnded) {
+        state = @"Connected";
+    } else if (call.isOutgoing && call.hasEnded) {
+        state = @"Disconnected";
+    } else if (!call.isOutgoing && call.hasEnded) {
+        state = @"Disconnected";
+    } else if (call.hasConnected && !call.hasEnded && !call.isOnHold) {
+        state = @"Connected";
+    } else if (call.isOutgoing && call.isOnHold) {
+        state = @"onHold";
+    } else if (!call.isOutgoing && call.isOnHold) {
+        state = @"onHold";
     }
     
     NSLog(@"RNCallDetection: Call state changed to %@", state);
